@@ -737,6 +737,19 @@ _makeTLSConn(natsConnection *nc)
                 SSL_set_verify(ssl, SSL_VERIFY_PEER, _collectSSLErr);
         }
     }
+#if defined(NATS_USE_OPENSSL_1_1)
+    if ((s == NATS_OK) && (nc->opts->sslCtx->sniHostname != NULL))
+    {
+        if (!SSL_set_tlsext_host_name(ssl, nc->opts->sslCtx->sniHostname))
+            s = nats_setError(NATS_SSL_ERROR, "unable to set SNI hostname '%s'", nc->opts->sslCtx->sniHostname);
+    }
+
+    if ((s == NATS_OK) && nc->opts->sslCtx->enableALPN)
+    {
+        if (SSL_set_alpn_protos(ssl, "\x04nats", 5) != 0)
+            s = nats_setError(NATS_SSL_ERROR, "unable to set ALPN 'nats'");
+    }
+#endif
     if ((s == NATS_OK) && (SSL_do_handshake(ssl) != 1))
     {
         s = nats_setError(NATS_SSL_ERROR,

@@ -2521,6 +2521,25 @@ natsOptions_SetExpectedHostname(natsOptions *opts, const char *hostname);
 NATS_EXTERN natsStatus
 natsOptions_SkipServerVerification(natsOptions *opts, bool skip);
 
+/** \brief Sets the hostname for the server name indication TLS extension.
+ *
+ * If set, the library will set the given hostname in the server name indication ClientHello
+ * extension. This will occur when a connection is created, not at the time of this call.
+ *
+ * @param opts the pointer to the #natsOptions object.
+ * @param hostname the hostname for SNI.
+ */
+NATS_EXTERN natsStatus
+natsOptions_SetSNIHostname(natsOptions *opts, const char *hostname);
+
+/** \brief Enable setting the ALPN protocol to 'nats' in the TLS ClientHello extension.
+ *
+ * @param opts the pointer to the #natsOptions object.
+ * @param enable `true` to enable ALPN, `false` otherwise.
+ */
+NATS_EXTERN natsStatus
+natsOptions_EnableALPN(natsOptions* opts, bool enable);
+
 /** \brief Sets the verbose mode.
  *
  * Sets the verbose mode. If `true`, sends are echoed by the server with

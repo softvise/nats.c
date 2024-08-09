@@ -233,6 +233,7 @@ natsSSLCtx_release(natsSSLCtx *ctx)
     if (refs == 0)
     {
         NATS_FREE(ctx->expectedHostname);
+        NATS_FREE(ctx->sniHostname);
         SSL_CTX_free(ctx->ctx);
         natsMutex_Destroy(ctx->lock);
         NATS_FREE(ctx);
@@ -697,6 +698,59 @@ natsOptions_SkipServerVerification(natsOptions *opts, bool skip)
     return s;
 }
 
+natsStatus
+natsOptions_SetSNIHostname(natsOptions* opts, const char* hostname)
+{
+    natsStatus s = NATS_OK;
+
+#if defined(NATS_USE_OPENSSL_1_1)
+    // Allow hostname to be empty in order to reset...
+    LOCK_AND_CHECK_OPTIONS(opts, 0);
+
+    s = _getSSLCtx(opts);
+    if (s == NATS_OK)
+    {
+        NATS_FREE(opts->sslCtx->sniHostname);
+        opts->sslCtx->sniHostname = NULL;
+
+        if (hostname != NULL)
+        {
+            opts->sslCtx->sniHostname = NATS_STRDUP(hostname);
+            if (opts->sslCtx->sniHostname == NULL)
+            {
+                s = nats_setDefaultError(NATS_NO_MEMORY);
+            }
+        }
+    }
+
+    UNLOCK_OPTS(opts);
+#else
+    s = nats_setError(NATS_ERR, "%s", "Setting SNI hostname requires OpenSSL 1.1+");
+#endif
+
+    return s;
+}
+
+natsStatus
+natsOptions_EnableALPN(natsOptions* opts, bool enable)
+{
+    natsStatus s = NATS_OK;
+
+#if defined(NATS_USE_OPENSSL_1_1)
+    LOCK_AND_CHECK_OPTIONS(opts, 0);
+
+    s = _getSSLCtx(opts);
+    if (s == NATS_OK)
+        opts->sslCtx->enableALPN = enable;
+
+    UNLOCK_OPTS(opts);
+#else
+	s = nats_setError(NATS_ERR, "%s", "Enabling ALPN requires OpenSSL 1.1+");
+#endif
+
+    return s;
+}
+
 #else
 
 natsStatus
@@ -751,6 +805,18 @@ natsOptions_SetExpectedHostname(natsOptions *opts, const char *hostname)
 
 natsStatus
 natsOptions_SkipServerVerification(natsOptions *opts, bool skip)
+{
+    return nats_setError(NATS_ILLEGAL_STATE, "%s", NO_SSL_ERR);
+}
+
+natsStatus
+natsOptions_SetSNIHostname(natsOptions* opts, const char* hostname)
+{
+    return nats_setError(NATS_ILLEGAL_STATE, "%s", NO_SSL_ERR);
+}
+
+natsStatus
+natsOptions_EnableALPN(natsOptions* opts, bool enable)
 {
     return nats_setError(NATS_ILLEGAL_STATE, "%s", NO_SSL_ERR);
 }

@@ -187,10 +187,13 @@ typedef struct __natsSSLCtx
     SSL_CTX     *ctx;
     char        *expectedHostname;
     bool        skipVerify;
+    char        *sniHostname;
+    bool        enableALPN;
 
 } natsSSLCtx;
 
 #define natsSSLCtx_getExpectedHostname(ctx) ((ctx)->expectedHostname)
+#define natsSSLCtx_getSNIHostname(ctx) ((ctx)->sniHostname)
 
 typedef struct
 {
