@@ -746,8 +746,8 @@ _makeTLSConn(natsConnection *nc)
 
     if ((s == NATS_OK) && nc->opts->sslCtx->enableALPN)
     {
-        if (SSL_set_alpn_protos(ssl, "\x04nats", 5) != 0)
-            s = nats_setError(NATS_SSL_ERROR, "unable to set ALPN 'nats'");
+        if (SSL_set_alpn_protos(ssl, (unsigned char const*)"\x04nats", 5) != 0)
+            s = nats_setError(NATS_SSL_ERROR, "unable to set ALPN '%s'", "nats");
     }
 #endif
     if ((s == NATS_OK) && (SSL_do_handshake(ssl) != 1))
